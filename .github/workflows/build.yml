@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches: [ main ]
@@ -10,23 +11,43 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # used to cache dependencies with a timeout
+      # Used to cache dependencies with a timeout
       - name: Get Date
         id: get-date
         run: |
-          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+          echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_ENV
         shell: bash
 
       - name: Cache Buildozer global directory
         uses: actions/cache@v3
         with:
           path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
 
-      - uses: actions/cache@v3
+      - name: Cache Buildozer directory
+        uses: actions/cache@v3
         with:
           path: .buildozer
-          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
+          key: ${{ runner.os }}-${{ env.date }}-${{ hashFiles('buildozer.spec') }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Set up Android SDK and AIDL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-sdk adb aidl
+          export ANDROID_SDK_ROOT=/usr/lib/android-sdk
+          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
+          sdkmanager --install "platform-tools" "platforms;android-30" "build-tools;30.0.3" "cmdline-tools;latest"
+        shell: bash
+
+      - name: Install Buildozer and dependencies
+        run: |
+          pip install buildozer cython
 
       - name: Build with Buildozer
         uses: ArtemSBulgakov/buildozer-action@v1
