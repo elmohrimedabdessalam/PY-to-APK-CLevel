@@ -28,26 +28,29 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '11' # Java version compatible with Android builds
+          java-version: '11'
 
       - name: Install Android SDK and AIDL
         run: |
           sudo apt-get update
           sudo apt-get install -y adb aidl unzip
 
-          # Download and install Android SDK Command-line tools
-          mkdir -p $HOME/android-sdk/cmdline-tools
+          # Download and set up Android SDK command-line tools
+          mkdir -p $HOME/android-sdk/cmdline-tools/latest
           cd $HOME/android-sdk/cmdline-tools
           curl -o sdk-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
           unzip sdk-tools.zip -d latest
           rm sdk-tools.zip
-          
+
           # Set up environment variables for Android SDK
           echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
           echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
           echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           
-          # Install necessary SDK components
+          # Refresh shell to include the new PATH
+          source $GITHUB_PATH
+
+          # Install Android SDK components
           sdkmanager --install "platform-tools" "platforms;android-30" "build-tools;30.0.3"
         shell: bash
 
